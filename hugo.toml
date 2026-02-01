@@ -2,6 +2,14 @@ baseURL = 'https://zigbalthazar.github.io'
 languageCode = 'en-us'
 title = 'Pouya Alizadeh'
 theme = 'nostyleplease'
+enableRobotsTXT = true
+
+[params]
+  description = 'Personal blog and notes by Pouya Alizadeh.'
+  author = 'Pouya Alizadeh'
+  [params.theme_config]
+    show_description = true
+
 [caches]
   [caches.images]
     dir = ':cacheDir/images'
