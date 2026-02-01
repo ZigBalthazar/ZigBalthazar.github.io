@@ -1,0 +1,33 @@
+{{ define "main" }}
+
+<article>
+    <h1>{{ .Title }}</h1>
+
+    <p>
+        {{- $date := .Date | time.Format site.Params.theme_config.date_format -}}
+        Published {{ $date }}
+        {{- with .Lastmod -}}
+            {{- if ne . $.Date -}}
+                · Updated {{ . | time.Format site.Params.theme_config.date_format }}
+            {{- end -}}
+        {{- end -}}
+        · {{ .ReadingTime }} min read
+        · {{ .WordCount }} words
+    </p>
+
+    {{- with .Params.tags -}}
+        <p>Tags: {{ delimit . ", " }}</p>
+    {{- end -}}
+    {{- with .Params.categories -}}
+        <p>Categories: {{ delimit . ", " }}</p>
+    {{- end -}}
+
+    {{ if .Params.toc }}
+        <aside {{ if .Params.tocBorder }} class="toc" {{ end }}>
+            {{ .TableOfContents }}
+        </aside>
+    {{ end }}
+
+    {{ .Content }}
+</article>
+{{ end }}

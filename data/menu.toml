@@ -1,0 +1,16 @@
+[[entries]]
+title = "about"
+url = "about"
+
+[[entries]]
+title = "recent posts"
+
+  [entries.post_list]
+  limit = 5
+  show_more = true
+  show_more_text = "See archive..."
+  show_more_url = "posts"
+
+[[entries]]
+title = "rss"
+url = "index.xml"
