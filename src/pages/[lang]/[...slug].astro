@@ -1,0 +1,138 @@
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import TopicCard from '../../components/TopicCard.astro';
+import { LANGS, type Lang } from '../../../site.config';
+import { useTranslations } from '../../i18n/ui';
+import {
+  getNotes, getTopicGroups, getSeriesContext, getTranslation,
+  noteHref, topicHref, topicIdOf,
+} from '../../lib/content';
+import { localeNum, formatDate } from '../../lib/format';
+
+/**
+ * One route serves both kinds of page: a topic index at /<lang>/<topic>/ and
+ * the notes beneath it at /<lang>/<topic>/<slug>/. Props carry only ids —
+ * entries are re-read below so Date fields stay real Dates.
+ */
+export async function getStaticPaths() {
+  const paths: Array<{ params: { lang: string; slug: string }; props: { kind: 'note' | 'topic'; id: string } }> = [];
+
+  for (const lang of LANGS) {
+    for (const note of await getNotes(lang)) {
+      const topicId = topicIdOf(note);
+      const slug = note.data.permalink ?? note.id.split("/").pop()!;
+      paths.push({
+        params: { lang, slug: topicId ? `${topicId}/${slug}` : slug },
+        props: { kind: 'note', id: note.id },
+      });
+    }
+    for (const group of await getTopicGroups(lang)) {
+      paths.push({
+        params: { lang, slug: group.id },
+        props: { kind: 'topic', id: group.topic.id },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const lang = Astro.params.lang as Lang;
+const other: Lang = lang === 'fa' ? 'en' : 'fa';
+const t = useTranslations(lang);
+const { kind, id } = Astro.props;
+
+// --- topic index page -------------------------------------------------
+let topicGroup = null;
+if (kind === 'topic') {
+  const groups = await getTopicGroups(lang);
+  topicGroup = groups.find((g) => g.topic.id === id) ?? null;
+  if (!topicGroup) return Astro.rewrite('/404');
+}
+const topicBody = topicGroup ? await render(topicGroup.topic) : null;
+
+// --- note page --------------------------------------------------------
+const note = kind === 'note' ? await getEntry('notes', id) : null;
+if (kind === 'note' && !note) return Astro.rewrite('/404');
+
+const noteBody = note ? await render(note) : null;
+const series = note ? await getSeriesContext(note) : null;
+const translated = note ? await getTranslation(note, other) : null;
+const altHref = translated ? noteHref(translated) : `/${other}/`;
+
+const pageTitle = note ? note.data.title : topicGroup!.topic.data.title;
+const pageDesc = note
+  ? (note.data.description ?? note.data.subtitle)
+  : topicGroup!.topic.data.description;
+
+const Content = noteBody?.Content;
+const TopicBody = topicBody?.Content;
+---
+<BaseLayout lang={lang} title={pageTitle} description={pageDesc} altHref={altHref}>
+  <main>
+    {topicGroup && (
+      <>
+        <nav class="note__breadcrumb">
+          <a href={`/${lang}/`}>{t('nav.notes')}</a>
+          <span aria-hidden="true">/</span>
+          <span>{topicGroup.topic.data.title}</span>
+        </nav>
+        <TopicCard group={topicGroup} lang={lang} />
+        {TopicBody && <div class="note prose"><TopicBody /></div>}
+      </>
+    )}
+
+    {note && Content && (
+      <article class="note">
+        <nav class="note__breadcrumb">
+          <a href={`/${lang}/`}>{t('nav.notes')}</a>
+          {series && (
+            <>
+              <span aria-hidden="true">/</span>
+              <a href={topicHref(series.topic)}>{series.topic.data.title}</a>
+              <span aria-hidden="true">/</span>
+              <span>{t('note.series', { n: localeNum(series.index, lang), total: localeNum(series.total, lang) })}</span>
+            </>
+          )}
+          {note.data.draft && <span class="note__badge">{t('note.draft')}</span>}
+        </nav>
+
+        <h1>{note.data.title}</h1>
+        {note.data.subtitle && <p class="note__subtitle">{note.data.subtitle}</p>}
+
+        <p class="note__meta">
+          <time datetime={note.data.date.toISOString()}>{formatDate(note.data.date, lang)}</time>
+          {note.data.updated && (
+            <>
+              {' · '}{t('note.updated')}:{' '}
+              <time datetime={note.data.updated.toISOString()}>{formatDate(note.data.updated, lang)}</time>
+            </>
+          )}
+        </p>
+
+        <div class="prose"><Content /></div>
+
+        {series && (series.prev || series.next) && (
+          <nav class="note__nav" aria-label={series.topic.data.title}>
+            {series.prev ? (
+              <a class="note__nav-link" href={noteHref(series.prev)}>
+                <span class="note__nav-dir">&larr; {t('note.prev')}</span>
+                <span class="note__nav-title">{series.prev.data.title}</span>
+              </a>
+            ) : <span />}
+            {series.next && (
+              <a class="note__nav-link note__nav-link--next" href={noteHref(series.next)}>
+                <span class="note__nav-dir">{t('note.next')} &rarr;</span>
+                <span class="note__nav-title">{series.next.data.title}</span>
+              </a>
+            )}
+          </nav>
+        )}
+      </article>
+    )}
+  </main>
+
+  <Sidebar lang={lang} current={note?.id} />
+</BaseLayout>

@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import TopicCard from '../../components/TopicCard.astro';
+import { LANGS, type Lang } from '../../../site.config';
+import { useTranslations, plural } from '../../i18n/ui';
+import { getTopicGroups, getNotes, getStandaloneNotes, noteHref } from '../../lib/content';
+import { localeNum, formatDate } from '../../lib/format';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const groups = await getTopicGroups(lang);
+const allNotes = await getNotes(lang);
+const loose = await getStandaloneNotes(lang);
+
+// Ordered series get a full-width card; unordered topics go in the grid below.
+const featured = groups.filter((g) => g.topic.data.ordered);
+const rest = groups.filter((g) => !g.topic.data.ordered);
+---
+<BaseLayout lang={lang}>
+  <main>
+    <section class="hero">
+      <h1>{t('site.title')}</h1>
+      <p class="hero__tagline">{t('site.tagline')}</p>
+
+      <div class="hero__intro">
+        {lang === 'fa' ? (
+          <>
+            <p>اینجا یادداشت‌های کوتاهی می‌نویسم دربارهٔ چیزهایی که می‌سازم: سرویس‌های بک‌اند، سیستم‌های توزیع‌شده، و پروتکل‌های باز.</p>
+            <p>بعضی یادداشت‌ها مستقل‌اند و هر جا که خواستید می‌توانید بازشان کنید؛ بعضی‌ها شماره‌دارند و پشت سر هم چیده شده‌اند تا از اول تا آخر خوانده شوند.</p>
+          </>
+        ) : (
+          <>
+            <p>Short notes on the things I build: backend services, distributed systems, and open protocols.</p>
+            <p>Some notes stand alone and you can open them anywhere. Others are numbered and arranged in order, meant to be read front to back.</p>
+          </>
+        )}
+      </div>
+
+      {allNotes.length > 0 && (
+        <p class="hero__stats">
+          {groups.length > 0 && <>{localeNum(groups.length, lang)} {plural(lang, 'home.topics', groups.length)} · </>}
+          {localeNum(allNotes.length, lang)} {plural(lang, 'home.notes', allNotes.length)}
+        </p>
+      )}
+    </section>
+
+    {featured.map((g) => <TopicCard group={g} lang={lang} />)}
+
+    {rest.length > 0 && (
+      <>
+        <h2 class="section-heading">{t('home.otherTopics')}</h2>
+        <div class="topic-grid">
+          {rest.map((g) => <TopicCard group={g} lang={lang} compact />)}
+        </div>
+      </>
+    )}
+
+    {loose.length > 0 && (
+      <>
+        <h2 class="section-heading">{t('home.looseNotes')}</h2>
+        <ul class="note-list">
+          {loose.map((n) => (
+            <li class="note-list__item">
+              <a class="note-list__link" href={noteHref(n)}>{n.data.title}</a>
+              {n.data.description && <p class="note-list__desc">{n.data.description}</p>}
+              <time class="note-list__date" datetime={n.data.date.toISOString()}>
+                {formatDate(n.data.date, lang)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      </>
+    )}
+  </main>
+
+  <Sidebar lang={lang} />
+</BaseLayout>

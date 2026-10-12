@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import { LANGS, SITE, type Lang } from '../../../site.config';
+import { useTranslations } from '../../i18n/ui';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+---
+<BaseLayout lang={lang} title={t('nav.about')} altHref={`/${lang === 'fa' ? 'en' : 'fa'}/about/`}>
+  <main>
+    <article class="note">
+      <h1>{t('nav.about')}</h1>
+      <div class="prose">
+        {lang === 'fa' ? (
+          <>
+            <p>
+              من <strong>پویا علیزاده</strong> هستم؛ مهندس نرم‌افزار با تمرکز روی بک‌اند و
+              سیستم‌های توزیع‌شده. در
+              <a href="https://dezh.tech" rel="noopener"> دژ (Dezh Technologies)</a> کار می‌کنم.
+            </p>
+            <p>
+              بیشتر وقتم با <strong>Go</strong> و <strong>TypeScript</strong> می‌گذرد: سرویس‌های
+              بک‌اند، ابزارهای زیرساختی، و کار روی پروتکل‌های باز — به‌ویژه
+              <a href="https://github.com/nostr-protocol/nips" rel="noopener"> Nostr</a> و
+              زیرساخت‌های بلاک‌چینی.
+            </p>
+            <p>
+              این سایت جای یادداشت‌های کوتاه من است. کدهایم را در
+              <a href={SITE.links.github} rel="me noopener"> گیت‌هاب</a> می‌گذارم و در
+              <a href={SITE.links.linkedin} rel="me noopener"> لینکدین</a> هم هستم.
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              I'm <strong>Pouya Alizadeh</strong>, a software engineer working on backend
+              services and distributed systems at
+              <a href="https://dezh.tech" rel="noopener"> Dezh Technologies</a>.
+            </p>
+            <p>
+              Most of my time goes into <strong>Go</strong> and <strong>TypeScript</strong> —
+              backend services, infrastructure tooling, and work on open protocols,
+              particularly <a href="https://github.com/nostr-protocol/nips" rel="noopener">Nostr</a>
+              and blockchain infrastructure.
+            </p>
+            <p>
+              This site is where I keep short notes. My code is on
+              <a href={SITE.links.github} rel="me noopener"> GitHub</a>, and I'm also on
+              <a href={SITE.links.linkedin} rel="me noopener"> LinkedIn</a>.
+            </p>
+          </>
+        )}
+      </div>
+    </article>
+  </main>
+  <Sidebar lang={lang} />
+</BaseLayout>

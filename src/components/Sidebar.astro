@@ -1,0 +1,49 @@
+---
+import { type Lang } from '../../site.config';
+import { useTranslations } from '../i18n/ui';
+import { getSidebar, noteHref, topicHref } from '../lib/content';
+import { localeNum } from '../lib/format';
+
+interface Props { lang: Lang; current?: string }
+const { lang, current } = Astro.props;
+const t = useTranslations(lang);
+const { groups, loose } = await getSidebar(lang);
+---
+<aside class="sidebar" aria-label={t('nav.index')}>
+  <p class="sidebar__heading">{t('nav.notes')}</p>
+
+  {groups.map((g) => (
+    <div class="sidebar__group">
+      <p class="sidebar__group-title">
+        <a class="sidebar__link" href={topicHref(g.topic)}>{g.topic.data.title}</a>
+      </p>
+      <ul class="sidebar__list">
+        {g.notes.map((n, i) => (
+          <li class="sidebar__item">
+            {g.topic.data.ordered && <span class="sidebar__num" aria-hidden="true">{localeNum(i + 1, lang)}</span>}
+            <a
+              class="sidebar__link"
+              href={noteHref(n)}
+              aria-current={current === n.id ? 'page' : undefined}
+            >{n.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+
+  {loose.length > 0 && (
+    <div class="sidebar__group">
+      <p class="sidebar__group-title">{t('home.looseNotes')}</p>
+      <ul class="sidebar__list">
+        {loose.map((n) => (
+          <li class="sidebar__item">
+            <a class="sidebar__link" href={noteHref(n)} aria-current={current === n.id ? 'page' : undefined}>
+              {n.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</aside>

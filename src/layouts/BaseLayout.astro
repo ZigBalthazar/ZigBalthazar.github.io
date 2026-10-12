@@ -1,0 +1,72 @@
+---
+import '@fontsource-variable/vazirmatn';
+import '@fontsource-variable/inter';
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE, LANG_META, type Lang } from '../../site.config';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  title?: string;
+  description?: string;
+  /** Where the language switcher should point. Defaults to the other language's home. */
+  altHref?: string;
+  /** Drop the sidebar column and use the full width. */
+  wide?: boolean;
+}
+
+const { lang, title, description, altHref, wide = false } = Astro.props;
+const t = useTranslations(lang);
+const meta = LANG_META[lang];
+const other: Lang = lang === 'fa' ? 'en' : 'fa';
+
+const pageTitle = title ? `${title} | ${t('site.title')}` : `${t('site.title')} — ${t('site.tagline')}`;
+const desc = description ?? t('site.tagline');
+const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE.url);
+---
+<!doctype html>
+<html lang={lang} dir={meta.dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={desc} />
+    <meta name="author" content={SITE.author} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" type="application/rss+xml" title={t('site.title')} href={`/${lang}/rss.xml`} />
+    <link rel="alternate" hreflang="fa" href={new URL('/fa/', SITE.url)} />
+    <link rel="alternate" hreflang="en" href={new URL('/en/', SITE.url)} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title ?? t('site.title')} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={meta.locale} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {/* Set the theme before first paint so the page never flashes the wrong one. */}
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.dataset.theme = 'dark';
+          else document.documentElement.dataset.theme = 'light';
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <Header lang={lang} altHref={altHref ?? `/${other}/`} />
+    <div class:list={['shell', wide && 'shell--wide']}>
+      <slot />
+    </div>
+    <Footer lang={lang} />
+  </body>
+</html>

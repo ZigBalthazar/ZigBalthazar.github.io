@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../../site.config';
+import { useTranslations } from '../i18n/ui';
+
+const lang = SITE.defaultLang;
+const t = useTranslations(lang);
+---
+<BaseLayout lang={lang} title={t('notFound.title')} wide>
+  <main class="note" style="margin-inline:auto; text-align:center; padding-block:4rem;">
+    <h1>{t('notFound.title')}</h1>
+    <p class="note__subtitle">{t('notFound.body')}</p>
+    <p><a class="iconbtn" href={`/${lang}/`}>{t('notFound.home')}</a></p>
+  </main>
+</BaseLayout>
